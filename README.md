@@ -21,6 +21,7 @@ You can also choose to build the program and run it.
                     or  
 Build a docker image and deploy it as a pod in a Kubernetes cluster and it will use the Incluster Config file to communicate with API server.Create a role and rolebinding to provide access to Kubernetes Object store.
 
+```
 Check the help menu by passing -h or --help:
 #/>go run main.go -h  
 Kubernetes event collector and notifier  
@@ -38,7 +39,7 @@ Flags:
   -k, --kubeconfig string   path to kubeconfig file  
 
 Use "chronos [command] --help" for more information about a command.  
-
+```
 ### What does it do
 
 The current version of Chronos tracks the status of Pods in all namespaces and logs on the command line
