@@ -106,10 +106,6 @@ func (c *controller) Run(stopper <-chan struct{}) {
 	wait.Until(c.runWorker, time.Second, stopper)
 }
 
-func (c *controller) HasSynced() bool {
-	return c.informer.HasSynced()
-}
-
 func (c *controller) runWorker() {
 	for c.processNextItem() {
 		// continue looping
