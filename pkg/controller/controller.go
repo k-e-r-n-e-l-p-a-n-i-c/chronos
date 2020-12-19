@@ -36,20 +36,6 @@ func Start(config string) {
 	factory := informers.NewSharedInformerFactory(kc, 0)
 	informer := factory.Core().V1().Pods().Informer()
 
-	/* 	var ctx context.Context
-	   	podInformer := cache.NewSharedIndexInformer(
-	   		&cache.ListWatch{
-	   			ListFunc: func(options meta.ListOptions) (runtime.Object, error) {
-	   				return kc.CoreV1().Pods(meta.NamespaceAll).List(ctx, options)
-	   			},
-	   			WatchFunc: func(options meta.ListOptions) (watch.Interface, error) {
-	   				return kc.CoreV1().Pods(meta.NamespaceAll).Watch(ctx, options)
-	   			},
-	   		},
-	   		&v1.Pod{},
-	   		0,
-	   		cache.Indexers{},
-	   	) */
 	c := newController(kc, informer)
 	stopCh := make(chan struct{})
 	defer close(stopCh)
@@ -97,18 +83,17 @@ func newController(kc kubernetes.Interface, informer cache.SharedIndexInformer) 
 }
 
 func (c *controller) Run(stopper <-chan struct{}) {
-	// don't let panics crash the process
-	defer utilruntime.HandleCrash()
-	// make sure the work queue is shutdown which will trigger workers to end
-	defer c.queue.ShutDown()
+
+	defer utilruntime.HandleCrash() //this will handle panic and won't crash the process
+	defer c.queue.ShutDown()        //shutdown all workqueue and terminate all workers
 
 	logrus.Info("Starting Chronos...")
 
 	go c.informer.Run(stopper)
 
 	logrus.Info("Synchronizing events...")
-	// wait for the caches to synchronize before starting the worker
 
+	//synchronize the cache before starting to process events
 	if !cache.WaitForCacheSync(stopper, c.informer.HasSynced) {
 		utilruntime.HandleError(fmt.Errorf("Timed out waiting for caches to sync"))
 		logrus.Info("synchronization failed...")
@@ -116,9 +101,8 @@ func (c *controller) Run(stopper <-chan struct{}) {
 	}
 
 	logrus.Info("synchronization complete!")
+	logrus.Info("Ready to process events")
 
-	// runWorker will loop until "something bad" happens.  The .Until will
-	// then rekick the worker after one second
 	wait.Until(c.runWorker, time.Second, stopper)
 }
 
@@ -141,7 +125,6 @@ func (c *controller) processNextItem() bool {
 
 	err := c.processItem(e.(event))
 	if err == nil {
-		// No error, reset the ratelimit counters
 		c.queue.Forget(e)
 		return true
 	}
@@ -154,37 +137,8 @@ func (c *controller) processItem(e event) error {
 		return fmt.Errorf("Error fetching object with key %s from store: %v", e.key, err)
 	}
 
-	//Use a switch clause instead
+	//Use a switch clause instead and process the events based on the type
 	logrus.Infof("Chronos has processed 1 event of type [%s] for object [%s]", e.eventType, obj)
 
 	return nil
 }
-
-//Alternate method
-/* func Start(config string) {
-	kc, err := utils.GetClient(config)
-	if err != nil {
-		logrus.Fatal(err)
-	}
-
-	factory := informers.NewSharedInformerFactory(kc, 0)
-	informer := factory.Core().V1().Events().Informer()
-	stopper := make(chan struct{})
-	defer close(stopper)
-	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			// "k8s.io/apimachinery/pkg/apis/meta/v1" provides an Object
-			// interface that allows us to get metadata easily
-			mObj := obj.(*v1.Event)
-			logrus.Infof("AddEvent : %s %s %s %s %s %s", mObj.Type, mObj.InvolvedObject.Kind, mObj.Namespace, mObj.Reason, mObj.Message, mObj.Series)
-		},
-		DeleteFunc: func(obj interface{}) {
-			// "k8s.io/apimachinery/pkg/apis/meta/v1" provides an Object
-			// interface that allows us to get metadata easily
-			mObj := obj.(*v1.Event)
-			logrus.Infof("DelEvent : %s %s %s %s %s %s", mObj.Type, mObj.InvolvedObject.Kind, mObj.Namespace, mObj.Reason, mObj.Message, mObj.Series)
-		},
-	})
-
-	informer.Run(stopper)
-} */
