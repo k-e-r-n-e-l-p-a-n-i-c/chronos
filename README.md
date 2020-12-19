@@ -12,7 +12,7 @@ Chronos is a kubernetes controller that I wrote to understand the internal worki
 The command line is written using Cobra CLI Framework.
 
 ### Installation
-
+You need to have 'go' installed and setup on the system.  
 After cloning the repository,you can run this program by executing:
 
 ```
