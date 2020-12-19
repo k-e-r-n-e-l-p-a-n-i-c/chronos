@@ -15,14 +15,16 @@ The command line is written using Cobra CLI Framework.
 
 After cloning the repository,you can run this program by executing:
 
-#/>go run main.go -k {path to the kubeconfig}  
+```
+#/>go run main.go -k {path to the kubeconfig}
+```
                     or  
 You can also choose to build the program and run it.  
                     or  
 Build a docker image and deploy it as a pod in a Kubernetes cluster and it will use the Incluster Config file to communicate with API server.Create a role and rolebinding to provide access to Kubernetes Object store.
 
-```
 Check the help menu by passing -h or --help:
+```
 #/>go run main.go -h  
 Kubernetes event collector and notifier  
 
